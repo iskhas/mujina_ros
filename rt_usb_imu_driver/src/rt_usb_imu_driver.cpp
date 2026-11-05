@@ -47,6 +47,8 @@ class RtUsbImuDriverNode : public rclcpp::Node {
 public:
   RtUsbImuDriverNode() : Node("rt_usb_imu_driver") {
     this->declare_parameter("port_name", "/dev/ttyUSB0");
+    this->declare_parameter("parse_period_ms", 1);  // データ読み取り周期[ms](デフォルト1ms)
+
     std::string port_name = this->get_parameter("port_name").as_string();
     // open port
     bool res = openPort(port_name);
@@ -59,9 +61,19 @@ public:
     // call printf() easily.
     memset(&read_buf_, '\0', sizeof(read_buf_));
 
+    int64_t parse_period_ms = this->get_parameter("parse_period_ms").as_int();
+    if (parse_period_ms < 1) {
+      RCLCPP_WARN(this->get_logger(), "parse_period_ms must be >= 1 (got %ld). Using 1 ms.",
+        parse_period_ms);
+      parse_period_ms = 1;
+    }
+
     publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", 10);
     data_parse_timer_ = this->create_wall_timer(
-        1ms, std::bind(&RtUsbImuDriverNode::data_parse_callback, this));
+      std::chrono::milliseconds(parse_period_ms),
+      std::bind(&RtUsbImuDriverNode::data_parse_callback, this));
+    RCLCPP_INFO(this->get_logger(), "port: %s, parse period: %ld ms", port_name.c_str(),
+      parse_period_ms);
   }
   ~RtUsbImuDriverNode() { close(port_fd_); }
 
