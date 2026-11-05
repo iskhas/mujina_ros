@@ -67,6 +67,9 @@ public:
 
 private:
   void data_parse_callback() {
+    // Logger
+    RCLCPP_DEBUG(this->get_logger(), "data_parse_callback called");
+
     // Read bytes. The behaviour of read() (e.g. does it block?,
     // how long does it block for?) depends on the configuration
     // settings above, specifically VMIN and VTIME
