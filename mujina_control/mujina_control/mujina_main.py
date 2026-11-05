@@ -56,6 +56,9 @@ from .mujina_utils import mujina_utils
 from .mujina_utils.parameters import parameters as P
 # from .tmotor_lib.tmotor_lib import CanMotorController
 
+#for debug log
+from rclpy.utilities import remove_ros_args
+
 
 KNEE_MOTOR_IDS = [3, 6, 9, 12]
 
@@ -195,7 +198,10 @@ def command_callback(
                         )
 
 
-def fused_imu_callback(msg: Imu, params: PeripheralState):
+def fused_imu_callback(msg: Imu, params: PeripheralState, node:Node):
+    # Debug Logger
+    node.get_logger().debug('fused_imu_callback called')
+    
     peripheral_state = params
     peripheral_state.sensor_last_received_time = time.time()
     quat = [
@@ -301,7 +307,7 @@ class BaseNode(Node):
         self.fused_imu_sub = self.create_subscription(
             Imu,
             'imu/data',
-            partial(fused_imu_callback, params=(self.peripheral_state)),
+            partial(fused_imu_callback, params=(self.peripheral_state), node = self),
             QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
 
@@ -811,7 +817,7 @@ class SimCommunication(BaseNode):
         imu_msg.linear_acceleration.x = self.data.qacc[0]
         imu_msg.linear_acceleration.y = self.data.qacc[1]
         imu_msg.linear_acceleration.z = self.data.qacc[2]
-        fused_imu_callback(imu_msg, self.peripheral_state)
+        fused_imu_callback(imu_msg, self.peripheral_state, self)
 
         with self.peripheral_state.lock:
             msg.body_quat = self.peripheral_state.body_quat[:]
@@ -1037,7 +1043,7 @@ class MainController(Node):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sim', action='store_true', help='do simulation')
-    args = parser.parse_args()
+    args = parser.parse_args(remove_ros_args(sys.argv)[1:])
 
     print('Hello mujina!!')
     rclpy.init()
