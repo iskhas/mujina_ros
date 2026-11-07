@@ -355,6 +355,7 @@ class BaseNode(Node):
     def joy_callback(
         self, msg: Joy, params: tuple[PeripheralState, RobotCommand]
     ):
+        self.get_logger().debug('joy_callback called')
         peripheral_state, robot_command = params
         with peripheral_state.lock:
             peripheral_state.control_enable = True
@@ -613,6 +614,8 @@ class CanCommunicationNode(BaseNode):
         subprocess.run(['sudo', '-n', 'shutdown', 'now'], check=True, timeout=10)
 
     def timer_callback(self):
+        self.get_logger().debug('timer_callback in CanCommunicationNode was called')
+        can_timer_callback_time = time.time()
         if self.knee_zero_in_progress:
             return
 
@@ -693,6 +696,9 @@ class CanCommunicationNode(BaseNode):
         msg.ref_torque = ref_torque
 
         self.mujina_log_pub.publish(msg)
+        finish_procedure_time = time.time()
+        if finish_procedure_time - can_timer_callback_time >= 0.02:
+            self.get_logger().debug('timer_callback in CanCommunicationNode use time more 20ms.')
 
 
 class SimCommunication(BaseNode):
@@ -867,6 +873,7 @@ class MainController(Node):
 
     def timer_callback(self):
         #self.get_logger().info('test')
+        main_timer_callback_time = time.time()
         with self.robot_command.lock:
             robot_mode = self.robot_command.robot_mode
 
@@ -1038,6 +1045,9 @@ class MainController(Node):
                 self.robot_command.angle = ref_angle
 
             self.last_actions = actions[:]
+        fin_timer_callback_time = time.time()
+        if fin_timer_callback_time - main_timer_callback_time > 0.02:
+            self.get_logger().debug('timer_callback in MainController use time more 20ms')
 
 
 def main():
