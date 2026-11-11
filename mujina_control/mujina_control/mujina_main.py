@@ -615,7 +615,7 @@ class CanCommunicationNode(BaseNode):
 
     def timer_callback(self):
         self.get_logger().debug('timer_callback in CanCommunicationNode was called')
-        can_timer_callback_time = time.time()
+        can_timer_callback_time = self.get_clock().now()
         if self.knee_zero_in_progress:
             return
 
@@ -696,9 +696,12 @@ class CanCommunicationNode(BaseNode):
         msg.ref_torque = ref_torque
 
         self.mujina_log_pub.publish(msg)
-        finish_procedure_time = time.time()
-        if finish_procedure_time - can_timer_callback_time >= 0.02:
-            self.get_logger().debug('timer_callback in CanCommunicationNode use time more 20ms.')
+        finish_procedure_time = self.get_clock().now()
+        procedure_time = finish_procedure_time - can_timer_callback_time
+        #ナノ秒をミリ秒に変換
+        procedure_time = (procedure_time.nanoseconds)/1e6
+        if procedure_time >= 20:
+            self.get_logger().debug(f'timer_callback in CanCommunicationNode use {procedure_time}ms.')
 
 
 class SimCommunication(BaseNode):
@@ -839,6 +842,13 @@ class SimCommunication(BaseNode):
         self.mujina_log_pub.publish(msg)
 
         self.viewer.sync()
+        
+        finish_procedure_time = self.get_clock().now()
+        procedure_time = finish_procedure_time - now
+        #ナノ秒をミリ秒に変換
+        procedure_time = (procedure_time.nanoseconds)/1e6
+        if procedure_time >= 20:
+            self.get_logger().debug(f'timer_callback in SimCommunicationNode use {procedure_time}ms.')
 
 
 class MainController(Node):
@@ -873,7 +883,7 @@ class MainController(Node):
 
     def timer_callback(self):
         #self.get_logger().info('test')
-        main_timer_callback_time = time.time()
+        main_timer_callback_time = self.get_clock().now()
         with self.robot_command.lock:
             robot_mode = self.robot_command.robot_mode
 
@@ -1045,9 +1055,12 @@ class MainController(Node):
                 self.robot_command.angle = ref_angle
 
             self.last_actions = actions[:]
-        fin_timer_callback_time = time.time()
-        if fin_timer_callback_time - main_timer_callback_time > 0.02:
-            self.get_logger().debug('timer_callback in MainController use time more 20ms')
+            
+        fin_timer_callback_time = self.get_clock().now()
+        main_procedure_time = fin_timer_callback_time - main_timer_callback_time
+        main_procedure_time = main_procedure_time.nanoseconds / 1e6
+        if main_procedure_time > 20:
+            self.get_logger().debug(f'timer_callback in MainController use {main_procedure_time}ms.')
 
 
 def main():
