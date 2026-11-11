@@ -701,7 +701,7 @@ class CanCommunicationNode(BaseNode):
         #ナノ秒をミリ秒に変換
         procedure_time = (procedure_time.nanoseconds)/1e6
         if procedure_time >= 20:
-            self.get_logger().debug(f'timer_callback in CanCommunicationNode use {procedure_time}ms.')
+            self.get_logger().warn(f'timer_callback in CanCommunicationNode use {procedure_time}ms.')
 
 
 class SimCommunication(BaseNode):
@@ -848,7 +848,7 @@ class SimCommunication(BaseNode):
         #ナノ秒をミリ秒に変換
         procedure_time = (procedure_time.nanoseconds)/1e6
         if procedure_time >= 20:
-            self.get_logger().debug(f'timer_callback in SimCommunicationNode use {procedure_time}ms.')
+            self.get_logger().warn(f'timer_callback in SimCommunicationNode use {procedure_time}ms.')
 
 
 class MainController(Node):
@@ -1060,7 +1060,7 @@ class MainController(Node):
         main_procedure_time = fin_timer_callback_time - main_timer_callback_time
         main_procedure_time = main_procedure_time.nanoseconds / 1e6
         if main_procedure_time > 20:
-            self.get_logger().debug(f'timer_callback in MainController use {main_procedure_time}ms.')
+            self.get_logger().warn(f'timer_callback in MainController use {main_procedure_time}ms.')
 
 
 def main():
